@@ -1,0 +1,460 @@
+"use client";
+
+import React, { useState, useEffect } from "react";
+import { MoreHorizontal, Check, FileSpreadsheet, Cuboid, Dock, Loader, ArrowUpDown, Target, Flag, Smile, Plus } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuCheckboxItem,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
+import LemonCard from "@/components/ui/lemoncard";
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { cn } from "@/lib/utils"
+import { Sidebar } from "@/components/ui/sidebar"
+import {Investor} from "@/types/investor";
+import Link from 'next/link';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
+import { ColumnDef, flexRender, getCoreRowModel, getSortedRowModel, SortingState, useReactTable, RowSelectionState, getFilteredRowModel } from "@tanstack/react-table"
+import { DataTable } from "@/components/ui/data-table"
+import { Checkbox } from "@/components/ui/checkbox"
+
+const getRedFlagVariant = (flag: string): "destructive" => {
+  return "destructive";
+};
+
+const getInvestorTypeLabel = (type: string | undefined): string => {
+  switch (type?.toLowerCase()) {
+    case 'angel':
+      return 'Angel';
+    case 'venture':
+      return 'Venture';
+    case 'micro':
+      return 'Micro';
+    default:
+      return 'Angel'; // Default to 'Angel' if type is undefined or not recognized
+  }
+};
+
+const LoadingOverlay = () => (
+  // <div className="fixed inset-0 flex items-center justify-center bg-gray-50 bg-opacity-80 z-50">
+  <div className="container mx-auto px-4 py-8   items-center justify-center flex h-full">
+    <div className="animate-spin h-10 w-10 border-4 border-dashed border-t-4 border-gray-300 rounded-full"></div>
+  </div>
+);
+
+// Add this type and columns definition before your Page component
+type InvestorColumn = ColumnDef<Investor>
+
+const columns: InvestorColumn[] = [
+  {
+    id: "select",
+    header: ({ table }) => (
+      <Checkbox
+        checked={table.getIsAllPageRowsSelected()}
+        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+        aria-label="Select all"
+      />
+    ),
+    cell: ({ row }) => (
+      <Checkbox
+        checked={row.getIsSelected()}
+        onCheckedChange={(value) => row.toggleSelected(!!value)}
+        aria-label="Select row"
+      />
+    ),
+    enableSorting: false,
+  },
+  {
+    accessorKey: "name",
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          className="pl-0 hover:bg-transparent"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Name
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      )
+    },
+    cell: ({ row }) => (
+      <Link 
+        href={`/investor/${row.original.id}`} 
+        className="hover:underline"
+      >
+        {row.getValue("name")}
+      </Link>
+    ),
+  },
+  {
+    accessorKey: "type",
+    header: "Type",
+    cell: ({ row }) => (
+      <Badge variant="outline" className="capitalize">
+        {getInvestorTypeLabel(row.getValue("type"))}
+      </Badge>
+    ),
+  },
+  {
+    accessorKey: "stage",
+    header: "Stage",
+  },
+  {
+    accessorKey: "checkSize",
+    header: "Check Size",
+    cell: ({ row }) => (
+      <div className="whitespace-nowrap">
+        {row.getValue("checkSize")}
+      </div>
+    ),
+  },
+  {
+    accessorKey: "sector",
+    header: "Sector",
+    cell: ({ row }) => (
+      <div className="max-w-[150px] truncate">
+        {row.getValue("sector")}
+      </div>
+    ),
+  },
+  {
+    accessorKey: "coInvestors",
+    header: "Co-Investors",
+    cell: ({ row }) => (
+      <div className="text-center">
+        {row.getValue("coInvestors")}
+      </div>
+    ),
+  },
+  {
+    accessorKey: "redFlags",
+    header: "Things to note",
+    cell: ({ row }) => {
+      const redFlags = row.getValue("redFlags") as string[];
+      const isStrikeZone = row.original.strikeZone;
+      const positiveAttributes = row.original.positiveAttributes as string[] || [];
+
+      return (
+        <div className="flex items-center gap-1 overflow-x-auto">
+          {/* Strike Zone Badge */}
+          {isStrikeZone && (
+            <Badge
+              className="whitespace-nowrap bg-[#E6FEEA] text-[#0E2A12] border border-green-200 flex items-center gap-1 rounded-lg py-1"
+            >
+              <Target className="h-3 w-3" strokeWidth={2} />
+              Strike Zone
+            </Badge>
+          )}
+
+          {/* Positive Attributes */}
+          {!isStrikeZone && positiveAttributes.map((attribute, i) => (
+            <Badge
+              key={`positive-${i}`}
+              className="whitespace-nowrap bg-blue-100 text-blue-800 border border-blue-200 rounded-lg py-1 flex items-center gap-1"
+            >
+              <Smile className="h-3 w-3" strokeWidth={3} />
+              {attribute}
+            </Badge>
+          ))}
+
+          {/* Red Flags */}
+          {!isStrikeZone && redFlags.map((flag, i) => (
+            <Badge
+              key={`negative-${i}`}
+              className="whitespace-nowrap bg-red-100 text-red-800 border border-red-200 rounded-lg py-1 flex items-center gap-1"
+            >
+              <Flag className="h-3 w-3" strokeWidth={3} />
+              {flag}
+            </Badge>
+          ))}
+        </div>
+      );
+    },
+  },
+  {
+    id: "actions",
+    cell: ({ row }) => (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" className="h-8 w-8 p-0">
+            <span className="sr-only">Open menu</span>
+            <MoreHorizontal className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuLabel>Actions</DropdownMenuLabel>
+          <DropdownMenuItem>View profile</DropdownMenuItem>
+          <DropdownMenuItem>Sync to database</DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <a href="https://brdg.app/network/acme.vc" target="_blank" rel="noopener noreferrer">
+              Bridge me
+            </a>
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem>Report issue</DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    ),
+  },
+]
+
+export default function Page() {
+  const [loading, setLoading] = useState<boolean>(true); // the loading state
+  const [error, setError] = useState<string | null>(null); // the error state (did the loading fail?)
+  const [data, setData] = useState<Investor[]>([]); // the data state i.e. the actual investors data
+  const [searchInput, setSearchInput] = useState(""); // the search input state
+  const [filteredData, setFilteredData] = useState<Investor[]>([]); // the filtered data state
+  
+  // base cases
+  const [totalQualifying, setTotalQualifying] = useState(0);
+  const [strikeZone, setStrikeZone] = useState(0);
+  const [redFlags, setRedFlags] = useState(0);
+  
+  const [connectedService, setConnectedService] = useState<string | null>(null); // not sure what this is yet.
+  const [sorting, setSorting] = useState<SortingState>([])
+  const [rowSelection, setRowSelection] = useState<RowSelectionState>({})
+
+  // the function that fetches the data and sets the state
+  useEffect(() => {
+    console.log('Fetching data...');
+    fetch('/data/investors.json')
+      .then((response) => response.json())
+      .then((res) => {
+        let i = res.investors;
+        setData(i);
+        setFilteredData(i);
+        setLoading(false);
+        setTotalQualifying(i.length);
+        setStrikeZone(i.filter((x: Investor) => x.strikeZone).length);
+        setRedFlags(i.filter((x: Investor) => x.redFlags.length > 0).length);
+      })
+      .catch((error) => {
+        console.error('Error fetching data:', error);
+        setLoading(false);
+      });
+  }, []);
+
+  // the function that filters the data
+  useEffect(() => {
+    const filterData = () => {
+      if (!searchInput.trim()) return data;
+      
+      const searchTerms = searchInput.toLowerCase().split(' ').filter(term => term);
+      
+      return data.filter(investor => {
+        // Check if ANY search term matches ANY field
+        return searchTerms.some(term => (
+          // Check main fields
+          investor.name?.toLowerCase().includes(term) ||
+          investor.sector?.toLowerCase().includes(term) ||
+          investor.stage?.toLowerCase().includes(term) ||
+          investor.type?.toLowerCase().includes(term) ||
+          
+          // Special handling for check size
+          (term.includes('$') || term.includes('k') || term.includes('m')) && 
+          isCheckSizeMatch(investor.checkSize, term)
+        ));
+      });
+    };
+
+    const isCheckSizeMatch = (checkSize: string | undefined, term: string) => {
+      if (!checkSize) return false;
+      
+      // Extract number and unit from search term (e.g., "$500k" or "2m")
+      const match = term.match(/(\d+)([km])?/i);
+      if (!match) return false;
+      
+      const [, amount, unit] = match;
+      const searchAmount = parseInt(amount) * (unit?.toLowerCase() === 'm' ? 1000000 : 1000);
+      
+      // Parse check size range (e.g., "$500K-$2M")
+      const [min, max] = checkSize.split('-')
+        .map(v => parseInt(v.replace(/[^0-9]/g, '')) * 
+             (v.toLowerCase().includes('m') ? 1000000 : 1000));
+      
+      return searchAmount >= min && searchAmount <= max;
+    };
+
+    const filtered = filterData();
+    setFilteredData(filtered);
+    setTotalQualifying(filtered.length);
+    setStrikeZone(filtered.filter(i => i.strikeZone).length);
+    setRedFlags(filtered.filter(i => i.redFlags.length > 0).length);
+  }, [searchInput]);
+
+  const handleConnect = (service: string) => {
+    // Open authentication window
+    window.open(`https://${service.toLowerCase().replace(' ', '')}.com/auth`, '_blank');
+
+    // Simulate successful connection after a delay
+    setTimeout(() => {
+      setConnectedService(service);
+    }, 2000);
+  };
+
+  return (
+    <div className="flex min-h-screen bg-background">
+      <Sidebar className="w-52 border-r" />
+      <div className="flex-1">
+        <header className="border-b">
+          <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+            <h1 className="text-2xl font-bold text-primary">Dashboard</h1>
+          </div>
+        </header>
+
+        {loading && <LoadingOverlay />}
+        <main className="container mx-auto px-4 py-8">
+          <div className="flex justify-between items-center mb-4">
+            <Input
+              placeholder="Search investors..."
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              className="max-w-sm"
+            />
+            <div className="space-x-2">
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button variant="default">Import Database</Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[425px]">
+                  <DialogHeader>
+                    <DialogTitle>Import your database</DialogTitle>
+                    <DialogDescription>
+                      Select a service to import from. You can only import from one database at a time.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-2 py-4">
+                    {[
+                      { name: "Google Sheets", icon: FileSpreadsheet },
+                      { name: "Notion", icon: Dock },
+                      { name: "Airtable", icon: Cuboid }
+                    ].map((service) => (
+                      <Button
+                        key={service.name}
+                        onClick={() => handleConnect(service.name)}
+                        variant="outline"
+                        className="justify-start"
+                        disabled={connectedService !== null && connectedService !== service.name}
+                      >
+                        <service.icon className="mr-2 h-4 w-4" />
+                        Import from {service.name}
+                        {connectedService === service.name && <Check className="h-4 w-4 ml-auto" />}
+                      </Button>
+                    ))}
+                  </div>
+                </DialogContent>
+              </Dialog>
+              <Button variant="outline">
+                <Plus className="mr-1 h-4 w-4" />
+                Manually add
+              </Button>
+            </div>
+          </div>
+
+          <div className="mt-8">
+            {/* ==================== */}
+            {/* METRICS DISPLAY MODE */}
+            {/* ==================== */}
+
+            {/* CARD MODE */}
+            {/* 
+            <div className="grid gap-6 md:grid-cols-3 mt-8 mb-8">
+              <LemonCard header="Total Investors" value={totalQualifying} />
+              <LemonCard header="Strike Zone" value={strikeZone} />
+              <LemonCard header="Red Flags" value={redFlags} />
+            </div>
+            */}
+
+            {/* TEXT MODE */}
+            <div className="mt-8 max-w-4xl">
+              <div className="space-y-2">
+                {(() => {
+                  // Create the initial messages
+                  const messages = [
+                    "Hey Seyi, I've done a good deal of research, and found",
+                    `${totalQualifying} total investors which I've added to your database below.`,
+                    `Among them, ${strikeZone} investors fall within your strike zone${redFlags > 0 ? `, and there are ${redFlags} investors with red flags worth reviewing` : ''}.`
+                  ];
+
+                  // Split messages that are too long (you can adjust the character limit)
+                  const splitMessages = messages.flatMap(message => {
+                    const maxChars = 60; // Adjust based on your container width and font size
+                    if (message.length > maxChars) {
+                      // Split on spaces and reconstruct lines that fit
+                      const words = message.split(' ');
+                      const lines = [];
+                      let currentLine = words[0];
+
+                      for (let i = 1; i < words.length; i++) {
+                        if ((currentLine + ' ' + words[i]).length <= maxChars) {
+                          currentLine += ' ' + words[i];
+                        } else {
+                          lines.push(currentLine);
+                          currentLine = words[i];
+                        }
+                      }
+                      lines.push(currentLine);
+                      return lines;
+                    }
+                    return [message];
+                  });
+
+                  return splitMessages.map((text, index) => (
+                    <p 
+                      key={index} 
+                      className="text-3xl text-muted-foreground"
+                      style={{
+                        overflow: 'hidden',
+                        whiteSpace: 'nowrap',
+                        animation: `typewriter 1.5s steps(50) ${index * 1.5}s forwards, showLine 0s ${index * 1.5}s forwards`,
+                        opacity: 0,
+                        animationFillMode: 'forwards'
+                      }}
+                    >
+                      {text}
+                    </p>
+                  ));
+                })()}
+              </div>
+            </div>
+
+            {/* ==================== */}
+            {/* END METRICS DISPLAY */}
+            {/* ==================== */}
+
+            {/* Table */}
+            <div className="mt-8">
+              <Card className="rounded-lg">
+                <CardHeader>
+                  <CardTitle>Investor Insights</CardTitle>
+                  <CardDescription>Analyze investor relationships and potential red flags</CardDescription>
+                </CardHeader>
+                <CardContent className="overflow-x-auto">
+                  <div className="min-w-max">
+                    <DataTable 
+                      columns={columns} 
+                      data={filteredData}
+                      sorting={sorting}
+                      setSorting={setSorting}
+                      rowSelection={rowSelection}
+                      setRowSelection={setRowSelection}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+  )
+}

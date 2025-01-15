@@ -1,0 +1,15 @@
+.cardTitle h3 {
+    padding-left: 0 !important;
+  }
+  
+  .customCardHeader {
+    padding: 1.5rem 1rem 0rem 1.5rem !important;
+  }
+  
+  .customCardHeader > div {
+    padding: 0 !important;
+  }
+  
+  .cardTitle {
+    padding-bottom: 0.5rem !important;
+  }
