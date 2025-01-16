@@ -303,158 +303,24 @@ export default function Page() {
 
   return (
     <div className="flex min-h-screen bg-background">
-      <Sidebar className="w-52 border-r" />
       <div className="flex-1">
         <header className="border-b">
           <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-            <h1 className="text-2xl font-bold text-primary">Dashboard</h1>
+            <h1 className="text-2xl font-bold text-primary">Snip</h1>
           </div>
         </header>
 
         {loading && <LoadingOverlay />}
         <main className="container mx-auto px-4 py-8">
-          <div className="flex justify-between items-center mb-4">
-            <Input
-              placeholder="Search investors..."
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              className="max-w-sm"
-            />
-            <div className="space-x-2">
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button variant="default">Import Database</Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[425px]">
-                  <DialogHeader>
-                    <DialogTitle>Import your database</DialogTitle>
-                    <DialogDescription>
-                      Select a service to import from. You can only import from one database at a time.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="grid gap-2 py-4">
-                    {[
-                      { name: "Google Sheets", icon: FileSpreadsheet },
-                      { name: "Notion", icon: Dock },
-                      { name: "Airtable", icon: Cuboid }
-                    ].map((service) => (
-                      <Button
-                        key={service.name}
-                        onClick={() => handleConnect(service.name)}
-                        variant="outline"
-                        className="justify-start"
-                        disabled={connectedService !== null && connectedService !== service.name}
-                      >
-                        <service.icon className="mr-2 h-4 w-4" />
-                        Import from {service.name}
-                        {connectedService === service.name && <Check className="h-4 w-4 ml-auto" />}
-                      </Button>
-                    ))}
-                  </div>
-                </DialogContent>
-              </Dialog>
-              <Button variant="outline">
-                <Plus className="mr-1 h-4 w-4" />
-                Manually add
-              </Button>
-            </div>
-          </div>
-
-          <div className="mt-8">
-            {/* ==================== */}
-            {/* METRICS DISPLAY MODE */}
-            {/* ==================== */}
-
-            {/* CARD MODE */}
-            {/* 
-            <div className="grid gap-6 md:grid-cols-3 mt-8 mb-8">
-              <LemonCard header="Total Investors" value={totalQualifying} />
-              <LemonCard header="Strike Zone" value={strikeZone} />
-              <LemonCard header="Red Flags" value={redFlags} />
-            </div>
-            */}
-
-            {/* TEXT MODE */}
-            <div className="mt-8 max-w-4xl">
-              <div className="space-y-2">
-                {(() => {
-                  // Create the initial messages
-                  const messages = [
-                    "Hey Seyi, I've done a good deal of research, and found",
-                    `${totalQualifying} total investors which I've added to your database below.`,
-                    `Among them, ${strikeZone} investors fall within your strike zone${redFlags > 0 ? `, and there are ${redFlags} investors with red flags worth reviewing` : ''}.`
-                  ];
-
-                  // Split messages that are too long (you can adjust the character limit)
-                  const splitMessages = messages.flatMap(message => {
-                    const maxChars = 60; // Adjust based on your container width and font size
-                    if (message.length > maxChars) {
-                      // Split on spaces and reconstruct lines that fit
-                      const words = message.split(' ');
-                      const lines = [];
-                      let currentLine = words[0];
-
-                      for (let i = 1; i < words.length; i++) {
-                        if ((currentLine + ' ' + words[i]).length <= maxChars) {
-                          currentLine += ' ' + words[i];
-                        } else {
-                          lines.push(currentLine);
-                          currentLine = words[i];
-                        }
-                      }
-                      lines.push(currentLine);
-                      return lines;
-                    }
-                    return [message];
-                  });
-
-                  return splitMessages.map((text, index) => (
-                    <p 
-                      key={index} 
-                      className="text-3xl text-muted-foreground"
-                      style={{
-                        overflow: 'hidden',
-                        whiteSpace: 'nowrap',
-                        animation: `typewriter 1.5s steps(50) ${index * 1.5}s forwards, showLine 0s ${index * 1.5}s forwards`,
-                        opacity: 0,
-                        animationFillMode: 'forwards'
-                      }}
-                    >
-                      {text}
-                    </p>
-                  ));
-                })()}
-              </div>
-            </div>
-
-            {/* ==================== */}
-            {/* END METRICS DISPLAY */}
-            {/* ==================== */}
-
-            {/* Table */}
-            <div className="mt-8">
-              <Card className="rounded-lg">
-                <CardHeader>
-                  <CardTitle>Investor Insights</CardTitle>
-                  <CardDescription>Analyze investor relationships and potential red flags</CardDescription>
-                </CardHeader>
-                <CardContent className="overflow-x-auto">
-                  <div className="min-w-max">
-                    <DataTable 
-                      columns={columns} 
-                      data={filteredData}
-                      sorting={sorting}
-                      setSorting={setSorting}
-                      rowSelection={rowSelection}
-                      setRowSelection={setRowSelection}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+          <div className="flex justify-end items-center mb-4">
+            <Button variant="outline">
+              <Plus className="mr-1 h-4 w-4" />
+              Manually add
+            </Button>
           </div>
         </main>
       </div>
+      <Sidebar className="w-52 border-l" />
     </div>
   )
 }

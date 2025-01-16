@@ -2,7 +2,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { HelpCircle, LayoutDashboard, Users, UserCircle } from "lucide-react"
+import { Image, SquareDashed, Grip, HelpCircle } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,9 +13,9 @@ import {
 } from "@/components/ui/dropdown-menu"
 
 const navItems = [
-  { href: "/", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/investors", label: "Investors", icon: Users },
-  { href: "/profile", label: "Profile", icon: UserCircle },
+  { href: "/backgrounds", label: "Backgrounds", icon: Image },
+  { href: "/border", label: "Border", icon: SquareDashed },
+  { href: "/grain", label: "Grain", icon: Grip },
 ]
 
 export function Sidebar({ className }: React.HTMLAttributes<HTMLDivElement>) {
@@ -29,9 +29,6 @@ export function Sidebar({ className }: React.HTMLAttributes<HTMLDivElement>) {
       <div className="flex-grow">
         <div className="space-y-3 py-3">
           <div className="px-2 py-1">
-            <h2 className="mb-2 px-3 text-base font-semibold tracking-tight">
-              Lemon
-            </h2>
             <div className="space-y-1">
               {navItems.map(({ href, label, icon: Icon }) => (
                 <Link key={href} href={href}>
