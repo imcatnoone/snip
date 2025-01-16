@@ -2,7 +2,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { Image, SquareDashed, Grip, HelpCircle } from "lucide-react"
+import { Image, SquareDashed, Grip, HelpCircle, ImagePlus } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -48,7 +48,14 @@ export function Sidebar({ className }: React.HTMLAttributes<HTMLDivElement>) {
           </div>
         </div>
       </div>
-      <div className="mt-auto pb-4 px-4">
+      <div className="mt-auto pb-4 px-4 space-y-2">
+        <Button 
+          variant="outline"
+          className="w-full justify-start text-primary hover:bg-accent hover:text-accent-foreground text-sm"
+        >
+          <ImagePlus className="mr-2 h-4 w-4" />
+          Save Image
+        </Button>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button 

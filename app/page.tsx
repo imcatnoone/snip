@@ -312,12 +312,7 @@ export default function Page() {
 
         {loading && <LoadingOverlay />}
         <main className="container mx-auto px-4 py-8">
-          <div className="flex justify-end items-center mb-4">
-            <Button variant="outline">
-              <Plus className="mr-1 h-4 w-4" />
-              Manually add
-            </Button>
-          </div>
+          {/* Button removed from here */}
         </main>
       </div>
       <Sidebar className="w-52 border-l" />
