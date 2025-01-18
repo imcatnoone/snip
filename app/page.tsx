@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { MoreHorizontal, Check, FileSpreadsheet, Cuboid, Dock, Loader, ArrowUpDown, Target, Flag, Smile, Plus } from "lucide-react";
+import React, { useState, useEffect, useCallback } from "react";
+import { MoreHorizontal, Check, FileSpreadsheet, Cuboid, Dock, Loader, ArrowUpDown, Target, Flag, Smile, Plus, Upload, Trash2 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -222,6 +222,8 @@ export default function Page() {
   const [connectedService, setConnectedService] = useState<string | null>(null); // not sure what this is yet.
   const [sorting, setSorting] = useState<SortingState>([])
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({})
+  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
 
   // the function that fetches the data and sets the state
   useEffect(() => {
@@ -301,21 +303,93 @@ export default function Page() {
     }, 2000);
   };
 
-  return (
-    <div className="flex min-h-screen bg-background">
-      <div className="flex-1">
-        <header className="border-b">
-          <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-            <h1 className="text-2xl font-bold text-primary">Snip</h1>
-          </div>
-        </header>
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setUploadedImage(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
-        {loading && <LoadingOverlay />}
-        <main className="container mx-auto px-4 py-8">
-          {/* Button removed from here */}
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setUploadedImage(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  }, []);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  }, []);
+
+  const handleDelete = () => {
+    setUploadedImage(null);
+  };
+
+  return (
+    <div className="flex h-screen overflow-hidden bg-background">
+      <div className="flex-1 transition-all duration-300 ease-in-out">
+        <main className="h-full p-8">
+          {/* Main container with 16:9 aspect ratio */}
+          <div className="w-full h-full flex items-center justify-center">
+            <div className="w-full aspect-video rounded-xl border border-border relative">
+              <div className="absolute inset-0 flex items-center justify-center">
+                {uploadedImage ? (
+                  <img 
+                    src={uploadedImage} 
+                    alt="Uploaded preview"
+                    className="max-w-full max-h-full object-contain transition-all duration-300 ease-in-out"
+                  />
+                ) : (
+                  // Upload prompt container
+                  <div 
+                    className="w-[70%] aspect-video rounded-xl relative"
+                    onDrop={handleDrop}
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                  >
+                    <div className={cn(
+                      "absolute inset-0 border-[5px] border-dashed border-border rounded-lg flex flex-col items-center justify-center gap-4 transition-colors",
+                      isDragging && "bg-muted/50",
+                      "hover:bg-muted/50"
+                    )}>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        className="absolute inset-0 opacity-0 cursor-pointer"
+                      />
+                      <div className="p-4 rounded-full bg-muted">
+                        <Upload className="h-6 w-6 text-muted-foreground" />
+                      </div>
+                      <p className="text-lg text-muted-foreground font-medium">
+                        Drop image here or click to upload
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
         </main>
       </div>
-      <Sidebar className="w-52 border-l" />
+      <Sidebar className="border-l shrink-0" />
     </div>
   )
 }
