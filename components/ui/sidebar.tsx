@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { Image, SquareDashed, Grip, HelpCircle, ImagePlus, Trash2 } from "lucide-react"
+import { Ruler, Image, SquareDashed, Grip, HelpCircle, ImagePlus, Trash2 } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,6 +19,7 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
+  { id: "dimensions", label: "Dimensions", icon: Ruler, content: null },
   { id: "backgrounds", label: "Backgrounds", icon: Image, content: null },
   { id: "border", label: "Border", icon: SquareDashed, content: null },
   { id: "grain", label: "Grain", icon: Grip, content: null },
@@ -59,7 +60,7 @@ export function Sidebar({ className, onDelete }: SidebarProps) {
   return (
     <div className={cn(
       "sticky top-0 h-screen flex flex-col transition-all duration-300",
-      isExpanded ? "w-64" : "w-16",
+      isExpanded ? "w-72" : "w-16",
       className
     )}>
       {/* Active Section Label */}
